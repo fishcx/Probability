@@ -1,0 +1,421 @@
+<script>
+	$(document).ready(function() {
+    
+    $('.changeItem').change(function(){
+        $('#generate').click();
+    });
+
+    $(document).keypress(function (e) {
+        var key = e.which;
+         if(key == 13)  // the enter key code
+         {
+            $('#generate').click();
+             return false;  
+          }
+    });
+    
+    $('#video-button').hide();
+    
+    var testing = false;
+    $('#generate').click(function(){
+        var type;
+        // handles the formatting for selecting any type
+        if($("#type").val()=="any"){type = random(1,4);}
+        else{type = parseInt($("#type").val())}
+        
+        if(!testing){$("#answer").hide(); $("#show-answer").val("Show Answer");}
+        generate(type);       
+     });
+
+
+    $("#show-answer").click(function(){
+       if($("#answer").is(":hidden") ){
+          $("#answer").show();
+          $("#show-answer").val("Hide Answer");
+       } else{
+         $("#answer").hide();
+         $("#show-answer").val("Show Answer");
+        }
+    });
+    
+    if(testing){ $("#answer").show();}
+    
+	});
+    var suits = ["Spades", "Diamonds", "Clubs", "Hearts"];
+    var suit = ["Spade", "Diamond", "Club", "Heart"];
+    var suitUni = ["\u2660","\u2666","\u2663","\u2665"];
+    var values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+    var valNames = ["Ace", "2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King"];
+	var valNames2 = ["an Ace", "a 2", "a 3", "a 4", "a 5", "a 6", "a 7", "a 8", "a 9", "a 10", "a Jack", "a Queen", "a King"];
+    
+    function generate(type){
+       
+       var videoLinks = ["https://www.youtube.com/watch?v=N9vsVYN4Djk",
+                         "https://www.youtube.com/watch?v=UtQQ9bip-kc",
+                         "https://www.youtube.com/watch?v=ZFLmAN0PVh8",
+                         "https://www.youtube.com/watch?v=ZOFO5Ve3jXM"];
+       
+       if(videoLinks[type-1].length != 0){ 
+         $("#videoLink"). attr("href", videoLinks[type-1]);
+         $('#video-button').show();
+       }
+       else{
+         $('#video-button').hide();
+       }
+       
+       var problem = "";
+       var answer = "";
+       var a,b,c,d,e,f,g,h,sf;
+       
+       $("#generated").html("");
+       $("#answer").html("");
+   
+       switch(type) {
+/////////////////////////////// Theoretical //////////////////////////////////////////////////         
+           case 1: 
+            
+           a = theoreticalOptions(); // generate one           
+           problem = "Suppose you "+a.desc+", what is the theoretical probability that you "+a.event[random(0,a.event.length-1)]+"?";
+           answer = "\\(\\cfrac{1}{"+a.num+"}\\)";
+
+           break;
+           
+/////////////////////////////// Experimental //////////////////////////////////////////////////         
+           case 2:
+           
+           a = experimentalOptions(); // generate one
+           c = random(5,10); // num of trials
+           var same = false;
+ 
+           problem = "Suppose you "+a.desc+" "+c+" times ";
+           
+           if(a.desc.includes("card")){ problem += " with replacement"; }
+           
+           problem += " and the results are shown below.";
+           
+           problem += "<br><br><table border='1'>";
+           
+           // run the experiment, count the number of each event occurence
+           var results = new Array();
+           
+           for(var i = 0; i < c; i++){
+              
+               results[i] = a.event[random(0,a.event.length-1)]; 
+           
+           }
+           
+           // make results row
+           problem += "<tr><td>"+a.name+"</td>"; 
+           for(var i = 0; i < c; i++){
+           
+               problem += "<td>"+results[i]+"</td>";
+           
+           }
+           
+           problem += "</tr>";
+           
+           problem+= "</table>";
+           
+           // select an event to find the probability of  
+           var event;
+           
+           if(!a.desc.includes("card")){
+             event = a.event[random(0,a.event.length-1)];
+           }
+           else{
+             
+             switch(random(0,2)){
+             
+             // pick a random card
+             case 0:
+                event = a.event[random(0,a.event.length-1)];
+             break;
+             
+             // pick a suit
+             case 1:
+                event = suitUni[random(0,suitUni.length-1)]; 
+             break;
+             
+             // pick a value
+             case 2:
+                 event = values[random(0,values.length-1)];
+             break;
+             
+             }
+           
+           }
+           problem += "<br>What is the experimental probability of getting "+event+"?";
+           
+           // check the event with the experimental output. Count the number of occurences.
+           var count = 0;
+           for(var i = 0; i < results.length; i++){
+           
+              if(results[i].includes(event)){
+                
+                count++;
+                
+              }
+           
+           }
+           answer = "\\(\\cfrac{"+count+"}{"+c+"}";
+           
+           if(count == 0){
+
+             answer += "= 0";
+           
+           }
+           
+           answer += "\\)";
+           
+           break;
+           
+/////////////////////////////// Theoretical Compound //////////////////////////////////////////////////
+           case 3:
+
+           a = theoreticalOptions(); // generate one 
+           b = theoreticalOptions(); // generate another
+           var event1 = a.event[random(0,a.event.length-1)];
+           var event2 = b.event[random(0,b.event.length-1)];
+              
+           // accounts for the grammar needed for two of the same selected event
+           if(a.desc == b.desc){
+            
+             b.desc = b.desc.replace(" a ", " another ");
+             a.name = a.name+" #1";
+             b.name = b.name+" #2";
+ 
+           }
+           problem = "Suppose you "+a.desc+" and "+b.desc+", what is the theoretical probability that you "+event1+" for the "+a.name+" <b>and</b> "+event2+" for the "+b.name+"?";
+           answer = "\\(\\cfrac{1}{"+a.num+"}\\cdot\\cfrac{1}{"+b.num+"}=\\cfrac{1}{"+(formatDec(a.num*b.num))+"}\\)";
+  
+           break;
+           
+/////////////////////////////// Experimental Compound //////////////////////////////////////////////////         
+           case 4:
+           
+           a = experimentalOptions(); // generate one
+           b = experimentalOptions(); // generate another, they can be the same event
+           c = random(5,10); // num of trials
+           var same = false;
+           // accounts for the grammar needed for two of the same selected event
+           if(a.desc == b.desc){
+            
+             b.desc = b.desc.replace(" a ", " another ");
+             a.name = a.name+" #1";
+             b.name = b.name+" #2";
+             same = true;
+             
+           }
+
+           problem = "Suppose you "+a.desc+" and "+b.desc+" "+c+" times each";
+           
+           if(a.desc.includes("card") || b.desc.includes("card")){ problem += " with replacement"; }
+           
+           problem += " and the results are shown below.";
+           
+           problem += "<br><br><table border='1'>";
+           
+           // run the experiment, count the number of each event occurence
+           var results = new Array(new Array(), new Array());
+           
+           for(var i = 0; i < c; i++){
+              
+               results[0][i] = a.event[random(0,a.event.length-1)]; 
+               results[1][i] = b.event[random(0,b.event.length-1)];
+           
+           }
+           
+           // make first row
+           problem += "<tr><td>"+a.name+"</td>"; 
+           for(var i = 0; i < c; i++){
+           
+               problem += "<td>"+results[0][i]+"</td>";
+           
+           }
+           problem += "</tr>";
+           
+           // make second row
+           problem += "<tr><td>"+b.name+"</td>";
+           
+           for(var i = 0; i < c; i++){
+           
+               problem += "<td>"+results[1][i]+"</td>";
+           
+           }
+           problem += "</tr>";
+           
+           problem+= "</table>";
+           
+           // select an event to find the probability of           
+           var event1;
+           var event2;
+           
+           if(!a.desc.includes("card")){
+             event1 = results[0][random(0,results[0].length-1)];
+           }
+           else{
+             
+             switch(random(0,2)){
+             
+             // pick a random card
+             case 0:
+                event1 = results[0][random(0,results[0].length-1)];
+             break;
+             
+             // pick a suit
+             case 1:
+                event1 = suitUni[random(0,suitUni.length-1)]; 
+             break;
+             
+             // pick a value
+             case 2:
+                 event1 = values[random(0,values.length-1)];
+             break;
+             
+             }
+           
+           }
+           
+           if(!b.desc.includes("card")){
+             event2 = results[1][random(0,results[1].length-1)];
+           }
+           else{
+             
+             switch(random(0,2)){
+             
+             // pick a random card
+             case 0:
+                event2 = results[1][random(0,results[1].length-1)];
+             break;
+             
+             // pick a suit
+             case 1:
+                event2 = suitUni[random(0,suitUni.length-1)]; 
+             break;
+             
+             // pick a value
+             case 2:
+                 event2 = values[random(0,values.length-1)];
+             break;
+             
+             }
+           
+           }
+
+           problem += "<br>What is the experimental probability of getting "+event1+" for the "+a.name+" <b>and</b> "+event2+" for the "+b.name+"?";
+           
+           // check the event with the experimental output. Count the number of occurences.
+           var count = 0;
+           for(var i = 0; i < results[0].length; i++){
+           
+              if(results[0][i].includes(event1) && results[1][i].includes(event2)){
+                
+                count++;
+                
+              }
+           
+           }
+           answer = "\\(\\cfrac{"+count+"}{"+c+"}";
+           
+           if(count == 0){
+
+             answer += "= 0";
+           
+           }
+           
+           answer += "\\)";
+           
+           break;
+           
+       }
+            
+       $("#generated").html(problem);
+       $("#answer").html(doublesigns(answer));
+       renderMathInElement(document.body);
+       //MathJax.Hub.queue.Push(["Typeset",MathJax.Hub,"generated"]);
+       //MathJax.Hub.queue.Push(["Typeset",MathJax.Hub,"answer"]);
+	}
+    
+    // helper function to generate a situation with the number of outcomes
+    function theoreticalOptions()
+    {
+         var spinnerSize = random(2,8);
+         
+         var options = [
+                          {name: "6-Sided Die", desc:"roll a 6-sided die",event:["roll a 1",
+                                                     "roll a 2",
+                                                     "roll a 3",
+                                                     "roll a 4",
+                                                     "roll a 5",
+                                                     "roll a 6"]
+                                                                   ,num:6},
+                                                                   
+                          {name: "Coin", desc:"flip a coin",event:["get heads",
+                                                     "get tails"]
+                                                                   ,num:2},
+                          
+                          {name: spinnerSize+"-Section Spinner", desc:"spin a "+spinnerSize+"-equal sectioned spinner (numbered 1 to "+spinnerSize+")",event:["spin a "+random(1,spinnerSize)],num:spinnerSize},
+                                                                   
+                          {name:"Card",desc:"pick a random card",event:["get the "+valNames[random(0,valNames.length-1)]+" of "+suits[random(0,suits.length-1)]],num:52},
+                                                                   
+                          {name:"Card",desc:"pick a random card",event:["get a "+suit[random(0,suit.length-1)]],num:4}, 
+                                                                   
+                          {name:"Card",desc:"pick a random card",event:["get "+valNames2[random(0,valNames.length-1)]],num:13}, 
+                                                
+                       ];
+           
+       return options[random(0,options.length-1)];
+    
+    }
+    
+    // helper function to generate a situation with the number of outcomes
+    function experimentalOptions()
+    {
+         var spinnerSize = random(2,8);
+       
+         var options = [
+                          {name:"6-Sided Die", desc:"roll a 6-sided die", event:["1","2","3","4","5","6"]},
+                                                                   
+                          {name:"Coin",desc:"flip a coin", event:["H","T"]},
+                          
+                          {name:spinnerSize+"-Section Spinner",desc:"spin a "+spinnerSize+"-equal sectioned spinner (numbered 1 to "+spinnerSize+")",event:getSpins(spinnerSize)},
+                                                                   
+                          {name:"Card",desc:"pick a random card", event:getDeck()}
+                       ];
+         
+       return options[random(0,options.length-1)];
+    
+    }
+    
+    // helper function that produces an array of a deck of cards
+    function getDeck()
+    {
+
+	var deck = new Array();
+
+	for(var i = 0; i < suitUni.length; i++)
+	{
+		for(var x = 0; x < values.length; x++)
+		{
+			var card = values[x]+" "+suitUni[i];
+			deck.push(card);
+		}
+	}
+
+	return deck;
+   }
+   
+   // helper function that produces an array of spinner options
+    function getSpins(spinnerSize)
+    {
+
+	var spins = new Array();
+
+	for(var i = 1; i <= spinnerSize; i++)
+	{
+			spins.push(""+i+"");
+	}
+
+	return spins;
+   }
+</script>
